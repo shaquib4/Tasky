@@ -1,197 +1,338 @@
-/*
- * Copyright 2018-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
- * Licensed under the Apache License, Version 2.0 (the "License").
- * You may not use this file except in compliance with the License.
- * A copy of the License is located at
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * or in the "license" file accompanying this file. This file is distributed
- * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
- * express or implied. See the License for the specific language governing
- * permissions and limitations under the License.
+// var state = {
+//   taskList: [
+//     {
+//       imageUrl: "",
+//       taskTitle: "",
+//       taskType: "",
+//       taskDescription: "",
+//     },
+//     {
+//       imageUrl: "",
+//       taskTitle: "",
+//       taskType: "",
+//       taskDescription: "",
+//     },
+//     {
+//       imageUrl: "",
+//       taskTitle: "",
+//       taskType: "",
+//       taskDescription: "",
+//     },
+//     {
+//       imageUrl: "",
+//       taskTitle: "",
+//       taskType: "",
+//       taskDescription: "",
+//     },
+//     {
+//       imageUrl: "",
+//       taskTitle: "",
+//       taskType: "",
+//       taskDescription: "",
+//     },
+//   ],
+// };
+
+// backup storage
+const state = {
+  taskList: [],
+};
+
+// DOM Operations
+const taskModal = document.querySelector(".task__modal__body");
+const taskContents = document.querySelector(".task__contents");
+
+// console.log(taskContents);
+// console.log(taskModal);
+
+// Template for the card on screen
+// elem identifier key=${id} is been misssing on line 50th
+const htmlTaskContent = ({ id, title, description, type, url }) => `
+  <div class="col-md-6 col-lg-4 mt-3" id=${id} key=${id}>
+    <div class='card shadow-sm task__card'>
+    
+      <div class='card-header d-flex justify-content-end task__card__header'>
+          <button type='button' class='btn btn-outline-primary mr-2' name=${id} onclick="editTask.apply(this, arguments)">
+              <i class='fas fa-pencil-alt name=${id}'></i>
+          </button>
+           <button type='button' class='btn btn-outline-danger mr-2' name=${id} onclick="deleteTask.apply(this, arguments)">
+              <i class='fas fa-trash-alt name=${id}' ></i>
+          </button>
+      </div>
+      <div class='card-body'>
+          ${
+            // url &&
+            // `<img width='100%' src=${url} alt='Card Image' class='card-img-top md-3 rounded-lg' />`
+            url
+              ? `<img width='100%' src=${url} alt='Card Image' class='card-img-top md-3 rounded-lg' />`
+              : `<img width='100%' src="https://tse1.mm.bing.net/th?id=OIP.F00dCf4bXxX0J-qEEf4qIQHaD6&pid=Api&rs=1&c=1&qlt=95&w=223&h=117" alt='Card Image' class='card-img-top md-3 rounded-lg' />`
+          }
+          <h4 class='card-title task__card__title'>${title}</h4>
+          <p class='description trim-3-lines text-muted'>${description}</p>
+          <div class='tags text-white d-flex flex-wrap'>
+            <span class='badge bg-primary m-1'>${type}</span>
+          </div>
+      </div>
+      <div class='card-footer'>
+          <button type='button' class='btn btn-outline-primary float-right' data-bs-toggle="modal" data-bs-target="#showTask" onclick='openTask.apply(this, arguments)' id=${id}>Open Task</button>
+      </div>
+    </div>
+  </div>
+`;
+
+// Modal Body on >> Clk of Open Task
+const htmlModalContent = ({ id, title, description, url }) => {
+  const date = new Date(parseInt(id));
+  return `
+  <div id=${id}>
+     ${
+       //  url &&
+       //  //  `<img width='100%' src=${url} alt='Card Image' class='img-fluid place__holder__image mb-3' />`
+       //  `<img width='100%' src=${url} alt='Card Image' class='img-fluid place__holder__image mb-3' />`
+       url
+         ? `<img width='100%' src=${url} alt='Card Image' class='card-img-top md-3 rounded-lg' />`
+         : `<img width='100%' src="https://tse1.mm.bing.net/th?id=OIP.F00dCf4bXxX0J-qEEf4qIQHaD6&pid=Api&rs=1&c=1&qlt=95&w=223&h=117" alt='Card Image' class='card-img-top md-3 rounded-lg' />`
+     }
+     <strong class='text-muted text-sm'>Created on: ${date.toDateString()}</strong>
+     <h2 class='my-3'>${title}</h2>
+     <p class='text-muted'>${description}</p>
+  </div>
+  `;
+};
+
+// where we convert json > str (i.e., for local storage)
+const updateLocalStorage = () => {
+  localStorage.setItem(
+    "task",
+    JSON.stringify({
+      tasks: state.taskList,
+    })
+  );
+};
+
+// where we convert str > json (i.e., for rendering the cards on the screen)
+// const loadInitialData = () => {
+//   const localStorageCopy = JSON.parse(localStorage.task);
+
+//   if (localStorageCopy) state.taskList = localStorageCopy.tasks;
+
+//   state.taskList.map((cardDate) => {
+//     // taskContents.innerAdjacentHTML("beforeend", htmlTaskContent(cardDate));
+//     taskContents.insertAdjacentHTML("beforeend", htmlTaskContent(cardDate));
+//   });
+// };
+
+const loadInitialData = () => {
+  const localStorageCopy = JSON.parse(localStorage.task);
+
+  if (localStorageCopy) state.taskList = localStorageCopy.tasks;
+
+  state.taskList.map((cardDate) => {
+    taskContents.insertAdjacentHTML("beforeend", htmlTaskContent(cardDate));
+  });
+};
+
+// Spread Operator
+/**
+ const obj = {
+    name: "rohan",
+    age: 2
+}
+
+
+console.log(obj);
+ {name: 'rohan', age: 2}
+
+console.log({obj});
+ {obj: {…}}obj: {name: 'rohan', age: 2}[[Prototype]]: Object
+
+console.log({...obj});
+ {name: 'rohan', age: 2}
+
+//  appending or adding a new key into obj:
+console.log({...obj, designation: "mentor"});
+{name: 'rohan', age: 2, designation: 'mentor'}
  */
 
-// sets up dependencies
-const Alexa = require('ask-sdk-core');
-const i18n = require('i18next');
-const languageStrings = require('./languageStrings');
-const sprintf = require('i18next-sprintf-postprocessor');
-/* personalization Utility */
-const personalizationUtil = require('./personalizationUtil')
-const personalizationStorageUtil = require('./personalizationStorageUtil')
-const aplDoc = require('./documents/facts.json');
-const DEFAULT_TOPIC = "SPACE"
-const FOOTBALL = "FOOTBALL"
-const SOCCER = "Soccer"
-const FOOTBALL_FACT_LOOKUP = "FOOTBALL_FACTS"
-const SPACE_FACT_LOOKUP = "SPACE_FACTS"
-let index=1;
-
 /**
- * Core functionality for fact skill
  * 
- * Gives fact based on Intent value
- * Else if Intent value not passed and personlized factTopic is set use that
- * Else default to space facts.
+//  updating key value using spread operator
+const obj={
+    name: "rohan"
+}
+
+console.log(obj)
+ {name: 'rohan'}
+
+
+console.log({...obj, age : 2});
+ {name: 'rohan', age: 2}
+
+console.log({...obj, age :4});
+{name: 'rohan', age: 4}
+ */
+
+/* 
+var date = new Date();
+console.log(Date.now());
+
+1677511569666
 */
 
-
-
-const questions = [  {    question: 'What is the capital of France?',    options: ['A. Paris', 'B. Berlin', 'C. London', 'D. Madrid'],
-    answer: 'A'
-  },
-  {
-    question: 'What is the largest planet in our solar system?',
-    options: ['A. Jupiter', 'B. Saturn', 'C. Mars', 'D. Neptune'],
-    answer: 'A'
-  },
-  {
-    question: 'Which artist painted the famous artwork "Starry Night"?',
-    options: ['A. Leonardo da Vinci', 'B. Vincent van Gogh', 'C. Pablo Picasso', 'D. Michelangelo'],
-    answer: 'B'
-  },
-  {
-    question: 'What is the highest mountain in the world?',
-    options: ['A. Mount Everest', 'B. Mount Kilimanjaro', 'C. Mount Fuji', 'D. Mount McKinley'],
-    answer: 'A'
-  },
-  {
-    question: 'What is the name of the first man to walk on the moon?',
-    options: ['A. Buzz Aldrin', 'B. Neil Armstrong', 'C. Yuri Gagarin', 'D. Alan Shepard'],
-    answer: 'B'
+// when we update or when we edit ..we need to save
+const handleSubmit = (event) => {
+  // console.log("event triggerd");
+  const id = `${Date.now()}`;
+  const input = {
+    url: document.getElementById("imageUrl").value,
+    title: document.getElementById("taskTitle").value,
+    type: document.getElementById("tags").value,
+    description: document.getElementById("taskDescription").value,
+  };
+  if (input.title === "" || input.type === "" || input.description === "") {
+    return alert("Please fill all the necessary fiels :-)");
   }
-];
 
+  // taskContents.innerAdjacentHTML(
+  taskContents.insertAdjacentHTML(
+    "beforeend",
+    htmlTaskContent({ ...input, id })
+  );
+  state.taskList.push({ ...input, id });
 
-const QuizStartHandler = {
-  canHandle(handlerInput) {
-    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
-  },
-  handle(handlerInput) {
-    const speechText = `Welcome to the quiz! Are you ready to test your knowledge?`;
-
-    return handlerInput.responseBuilder
-      .speak(speechText)
-      .reprompt(speechText)
-      .getResponse();
-  }
+  updateLocalStorage();
 };
 
-const QuizReadyHandler = {
-  canHandle(handlerInput) {
-    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-      && Alexa.getIntentName(handlerInput.requestEnvelope) === 'QuizReadyIntent';
-  },
-  handle(handlerInput) {
-    const answer = Alexa.getSlotValue(handlerInput.requestEnvelope, 'answer');
+//open task
+const openTask = (e) => {
+  if (!e) e = window.event;
 
-    if (answer === 'yes') {
-         const currentQuestion = questions[0];
-     let speechText = '';
+  const getTask = state.taskList.find(({ id }) => id === e.target.id);
+  taskModal.innerHTML = htmlModalContent(getTask);
+};
 
-    
-     speechText += 'Great! Let\'s start the quiz. ';
-    speechText += `${currentQuestion.question} `;
-    speechText += `Is it ${currentQuestion.options.join(', ')}? `;
+// delete task
+const deleteTask = (e) => {
+  if (!e) e = window.event;
 
-      const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-      sessionAttributes.currentQuestion = 0;
-      sessionAttributes.correctAnswers = 0;
-      sessionAttributes.currentQuestionIndex=1;
+  const targetId = e.target.getAttribute("name");
+  // console.log(targetId);
+  const type = e.target.tagName;
+  // console.log(type);
+  const removeTask = state.taskList.filter(({ id }) => id !== targetId);
+  // console.log(removeTask);
+  updateLocalStorage();
 
-      return handlerInput.responseBuilder
-        .speak(speechText)
-        .reprompt(speechText)
-        .getResponse();
-    } else if (answer === 'no') {
-      const speechText = `Okay, no problem. Let me know when you're ready.`;
-
-      return handlerInput.responseBuilder
-        .speak(speechText)
-        .reprompt(speechText)
-        .getResponse();
-    } else {
-      const speechText = `Sorry, I didn't catch that. Are you ready to test your knowledge?`;
-
-      return handlerInput.responseBuilder
-        .speak(speechText)
-        .reprompt(speechText)
-        .getResponse();
-    }
+  if (type === "BUTTON") {
+    // console.log(e.target.parentNode.parentNode.parentNode.parentNode);
+    return e.target.parentNode.parentNode.parentNode.parentNode.removeChild(
+      e.target.parentNode.parentNode.parentNode
+    );
+  } else if (type === "I") {
+    return e.target.parentNode.parentNode.parentNode.parentNode.parentNode.removeChild(
+      e.target.parentNode.parentNode.parentNode.parentNode
+    );
   }
 };
 
-const QuizDescriptionHandler = {
-  canHandle(handlerInput) {
-    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-      && Alexa.getIntentName(handlerInput.requestEnvelope) === 'QuizDescriptionIntent';
-  },
-  handle(handlerInput) {
-    const speechText = `This quiz will test your knowledge on a variety of topics. You will be asked a series of multiple-choice questions, and you will need to respond with the letter of the correct answer. Are you ready to begin?`;
+// edit task
+const editTask = (e) => {
+  if (!e) e = window.event;
 
-    return handlerInput.responseBuilder
-      .speak(speechText)
-      .reprompt(speechText)
-      .getResponse();
+  const targetId = e.target.id;
+  const type = e.target.tagName;
+
+  let parentNode;
+  let taskTitle;
+  let taskDescription;
+  let taskType;
+  let submitButton;
+
+  if (type === "BUTTON") {
+    parentNode = e.target.parentNode.parentNode;
+  } else {
+    parentNode = e.target.parentNode.parentNode.parentNode;
   }
+
+  // taskTitle = parentNode.childNodes[3].childNodes[7].childNodes;
+  // console.log(taskTitle);
+
+  taskTitle = parentNode.childNodes[3].childNodes[3];
+  taskDescription = parentNode.childNodes[3].childNodes[5];
+  taskType = parentNode.childNodes[3].childNodes[7].childNodes[1];
+  submitButton = parentNode.childNodes[5].childNodes[1];
+
+  // console.log(taskTitle, taskDescription, taskType, submitButton);
+
+  taskTitle.setAttribute("contenteditable", "true");
+  taskDescription.setAttribute("contenteditable", "true");
+  taskType.setAttribute("contenteditable", "true");
+
+  submitButton.setAttribute("onclick", "saveEdit.apply(this, arguments)");
+  submitButton.removeAttribute("data-bs-toggle");
+  submitButton.removeAttribute("data-bs-target");
+  submitButton.innerHTML = "Save Changes";
 };
 
-const QuizHandler = {
-  canHandle(handlerInput) {
-    return handlerInput.requestEnvelope.request.type === 'IntentRequest'
-      && handlerInput.requestEnvelope.request.intent.name === 'QuizIntent';
-  },
-  handle(handlerInput) {
-    let currentQuestionIndex = handlerInput.attributesManager.getSessionAttributes().currentQuestionIndex;
-    const currentQuestion = questions[index];
-    const ans=questions[index-1];
+// save edit
+const saveEdit = (e) => {
+  if (!e) e = window.event;
 
-    let speechText = '';
+  const targetId = e.target.id;
+  const parentNode = e.target.parentNode.parentNode;
+  // console.log(parentNode.childNodes)
 
-    if (currentQuestionIndex === 0) {
-      speechText += 'Welcome to the quiz! ';
-      speechText += 'This quiz will ask you 5 multiple choice questions to test your knowledge. ';
-      speechText += 'Are you ready to start? ';
-    } else {
-      const previousAnswer = handlerInput.requestEnvelope.request.intent.slots.answers.value;
-      const isCorrect = previousAnswer.toUpperCase() === ans.answer;
+  const taskTitle = parentNode.childNodes[3].childNodes[3];
+  const taskDescription = parentNode.childNodes[3].childNodes[5];
+  const taskType = parentNode.childNodes[3].childNodes[7].childNodes[1];
+  const submitButton = parentNode.childNodes[5].childNodes[1];
 
-      if (isCorrect) {
-        speechText += 'Correct! ';
-      } else {
-        speechText += `Incorrect. The correct answer is ${ans.answer}. `;
-      }
-     index=index+1;
-    }
+  const updateData = {
+    taskTitle: taskTitle.innerHTML,
+    taskDescription: taskDescription.innerHTML,
+    taskType: taskType.innerHTML,
+  };
+  let stateCopy = state.taskList;
 
-    if (index < questions.length) {
-      speechText += `${currentQuestion.question} `;
-      speechText += `Is it ${currentQuestion.options.join(', ')}? `;
+  stateCopy = stateCopy.map((task) =>
+    task.id === targetId
+      ? {
+          id: task.id,
+          title: updateData.taskTitle,
+          description: updateData.taskDescription,
+          type: updateData.taskType,
+          url: task.url,
+        }
+      : task
+  );
+  state.taskList = stateCopy;
+  updateLocalStorage();
 
-      const repromptText = 'I didn\'t catch that. Can you please say the letter of the correct answer?';
+  taskTitle.setAttribute("contenteditable", "false");
+  taskDescription.setAttribute("contenteditable", "false");
+  taskType.setAttribute("contenteditable", "false");
 
-      return handlerInput.responseBuilder
-        .speak(speechText)
-        .reprompt(repromptText)
-        .getResponse();
-    } else {
-      speechText += 'You have reached the end of the quiz. ';
-      speechText += 'Thank you for playing!';
-
-      return handlerInput.responseBuilder
-        .speak(speechText)
-        .getResponse();
-    }
-  },
+  submitButton.setAttribute("onclick", "openTask.apply(this, arguments)");
+  submitButton.setAttribute("data-bs-toggle", "modal");
+  submitButton.setAttribute("data-bs-target", "#showTask");
+  submitButton.innerHTML = "Open Task";
 };
 
+// search
+const searchTask = (e) => {
+  if (!e) e = window.event;
 
+  while (taskContents.firstChild) {
+    taskContents.removeChild(taskContents.firstChild);
+  }
+  const resultData = state.taskList.filter(({ title }) =>
+    title.toLowerCase().includes(e.target.value.toLowerCase())
+  );
 
-exports.handler = Alexa.SkillBuilders.custom()
-  .addRequestHandlers(
-    QuizStartHandler,
-    QuizReadyHandler,
-    QuizDescriptionHandler,
-    QuizHandler
-  )
-  .lambda();
+  // console.log(resultData);
+  resultData.map(
+    (cardData) =>
+      taskContents.insertAdjacentHTML("beforeend", htmlTaskContent(cardData))
+    // taskContents.insertAdjacentHTML("beforeend", htmlModalContent(cardData))
+  );
+};
